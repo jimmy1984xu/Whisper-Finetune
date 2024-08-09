@@ -2,7 +2,7 @@ import argparse
 import functools
 import os
 import platform
-
+import time
 import torch
 import uvicorn
 from fastapi import FastAPI, File, Body, UploadFile, Request
@@ -89,9 +89,9 @@ def recognition(file: File, to_simple: int, remove_pun: int, language: str = Non
     # 推理参数
     generate_kwargs = {"task": task, "num_beams": args.num_beams}
     if language is not None:
-        generate_kwargs["language"] = args.language
+        generate_kwargs["language"] = language
     # 推理
-    result = infer_pipe(file, return_timestamps=True, generate_kwargs=generate_kwargs)
+    result = infer_pipe(file, return_timestamps=True, return_language=True, generate_kwargs=generate_kwargs)
     results = []
     for chunk in result["chunks"]:
         text = chunk['text']
@@ -105,14 +105,18 @@ def recognition(file: File, to_simple: int, remove_pun: int, language: str = Non
 
 
 @app.post("/recognition")
-async def api_recognition(to_simple: int = Body(1, description="是否繁体转简体", embed=True),
+async def api_recognition(to_simple: int = Body(0, description="是否繁体转简体", embed=True),
                           remove_pun: int = Body(0, description="是否删除标点符号", embed=True),
                           language: str = Body(None, description="设置语言，如果为None则预测的是多语言", embed=True),
                           task: str = Body("transcribe", description="识别任务类型，支持transcribe和translate", embed=True),
                           audio: UploadFile = File(..., description="音频文件")):
     if language == "None": language = None
     data = await audio.read()
+    start_time = time.time()
+    audiolen = 100
     results = recognition(file=data, to_simple=to_simple, remove_pun=remove_pun, language=language, task=task)
+    cost_time = int((time.time() - start_time) * 1000)
+    print("audio: "+str(audiolen)+"ms decode: "+str(cost_time)+"ms rtf="+str(cost_time/audiolen))
     ret = {"results": results, "code": 0}
     return ret
 
