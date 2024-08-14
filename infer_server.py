@@ -95,11 +95,12 @@ def recognition(file: File, to_simple: int, remove_pun: int, language: str = Non
     results = []
     for chunk in result["chunks"]:
         text = chunk['text']
+        lang = chunk['language']
         if to_simple == 1:
             text = convert(text, 'zh-cn')
         if remove_pun == 1:
             text = remove_punctuation(text)
-        ret = {"text": text, "start": chunk['timestamp'][0], "end": chunk['timestamp'][1]}
+        ret = {"text": text, "language": lang, "start": chunk['timestamp'][0], "end": chunk['timestamp'][1]}
         results.append(ret)
     return results
 
@@ -117,7 +118,8 @@ async def api_recognition(to_simple: int = Body(0, description="是否繁体转�
     results = recognition(file=data, to_simple=to_simple, remove_pun=remove_pun, language=language, task=task)
     cost_time = int((time.time() - start_time) * 1000)
     total_text = "".join([x["text"] for x in results])
-    print(f"decode: {cost_time} ms rtf= {cost_time / audiolen} language: {language} text: {total_text}")
+    lang = results[0]["language"]
+    print(f"decode: {cost_time} ms rtf= {cost_time / audiolen} set_language: {language} language: {lang} text: {total_text}")
     ret = {"results": results, "code": 0}
     return ret
 
