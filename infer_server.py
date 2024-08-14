@@ -116,7 +116,8 @@ async def api_recognition(to_simple: int = Body(0, description="是否繁体转�
     audiolen = 100
     results = recognition(file=data, to_simple=to_simple, remove_pun=remove_pun, language=language, task=task)
     cost_time = int((time.time() - start_time) * 1000)
-    print("audio: "+str(audiolen)+"ms decode: "+str(cost_time)+"ms rtf="+str(cost_time/audiolen))
+    total_text = "".join([x["text"] for x in results])
+    print(f"decode: {cost_time} ms rtf= {cost_time / audiolen} language: {language} text: {total_text}")
     ret = {"results": results, "code": 0}
     return ret
 
